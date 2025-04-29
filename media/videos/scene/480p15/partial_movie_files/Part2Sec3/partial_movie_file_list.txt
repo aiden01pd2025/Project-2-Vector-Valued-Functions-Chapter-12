@@ -1,0 +1,7 @@
+# This file is used internally by FFMPEG.
+file 'file:/Users/aidengu/Desktop/Grade 12/Multivariable Calculus/Project 2 – Vector Valued Functions – Chapter 12/media/videos/scene/480p15/partial_movie_files/Part2Sec3/4013836595_3361775091_2747673665.mp4'
+file 'file:/Users/aidengu/Desktop/Grade 12/Multivariable Calculus/Project 2 – Vector Valued Functions – Chapter 12/media/videos/scene/480p15/partial_movie_files/Part2Sec3/2463563169_3133789341_57157010.mp4'
+file 'file:/Users/aidengu/Desktop/Grade 12/Multivariable Calculus/Project 2 – Vector Valued Functions – Chapter 12/media/videos/scene/480p15/partial_movie_files/Part2Sec3/2463563169_2453053765_2731476591.mp4'
+file 'file:/Users/aidengu/Desktop/Grade 12/Multivariable Calculus/Project 2 – Vector Valued Functions – Chapter 12/media/videos/scene/480p15/partial_movie_files/Part2Sec3/2463563169_1604011585_4218299293.mp4'
+file 'file:/Users/aidengu/Desktop/Grade 12/Multivariable Calculus/Project 2 – Vector Valued Functions – Chapter 12/media/videos/scene/480p15/partial_movie_files/Part2Sec3/2463563169_1005072298_4104302094.mp4'
+file 'file:/Users/aidengu/Desktop/Grade 12/Multivariable Calculus/Project 2 – Vector Valued Functions – Chapter 12/media/videos/scene/480p15/partial_movie_files/Part2Sec3/2463563169_2638599953_2110052371.mp4'

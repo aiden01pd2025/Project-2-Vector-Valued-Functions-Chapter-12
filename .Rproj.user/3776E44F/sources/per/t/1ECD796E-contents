@@ -1,0 +1,386 @@
+---
+title: "Rotations In 3D"
+subtitle: "Euler Angles, Rotation Matrices, Quaternions"
+author: "Aiden Gu"
+date: "*Mu-Alpha-Theta 24/25*"
+output:
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+    toc: yes
+    toc_depth: 4
+mathjax: katex
+header-includes:
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.width=7, fig.height=4, format = "latex")
+if(!require('pacman')) {
+  install.packages('pacman')
+}
+pacman::p_load(rgl, plotly, shiny, htmlwidgets, gt, ggplot2, gridExtra, grid, dplyr, tidyr, cowplot) 
+```
+
+```{css cssFormatting}
+.title{
+  font-size: 128px !important;
+  padding-top: 185px !important;
+}
+
+.subtitle{
+  font-size: 32px !important;
+}
+
+.date{
+  padding-bottom: 185px !important;
+}
+      
+h2{
+  font-size: 64px !important;
+  color: #326382 !important;
+}
+
+h4{
+  font-size: 32px !important;
+  color: #47975e !important;
+}
+```
+
+How do games rotate things?
+
+When you tell your character to turn left, how does the game know what to do?
+
+How do you describe a rotation with math?
+
+## 2D Space
+
+In `2D Space`, rotations are relatively easy to describe. There's only one axis you can rotate around: the axis pointing out from the plane. There are also only two directions you can rotate in: `clockwise` & `counter-clockwise`. Thus, we can use an angle $\theta$ to describe how much something rotates, and the `sign` to indicate direction. The norm is to use $+$ for counter-clockwise & $-$ for clockwise.
+
+**Counter-clockwise & Clockwise Rotation**
+
+![](./graphics/TwoDSPace1.png){#id .class width=49.5%}  ![](./graphics/TwoDSPace2.png){#id .class width=49.5%}
+
+\
+
+#### Complex Plane
+
+In the complex plane, we can use `polar coordinates` to help with rotating vectors. Using `Euler's Formula` from plugging $i\theta$ into $e$'s `Taylor Series` (see <u>*Appendix A*</u>), we can write a complex number as:
+
+$$re^{i\theta}=r(\cos\theta+i\sin\theta)$$
+
+Where $r$ is the magnitude and $\theta$ is the counter-clockwise angle from the `Real-Axis`. Here, $r\cos\theta$ represents the `real component` of the complex number whilst $ri\sin\theta$ represents the `imaginary component`.
+
+Let's define our `initial` vector as $z_0=re^{i\theta_0}$. To get the rotated vector $z\,'$, we simply increase the value of $\theta$ by the angle $\Delta\theta$:
+
+$$z\,' = re^{i(\theta_0+\Delta\theta)} = (re^{i\theta_0})e^{i\Delta\theta} = z_0 (e^{i\Delta\theta})$$
+
+From this derivation, we can see that rotating a complex number in a complex plane is the same as multiplying it by $e^{i\Delta\theta}$. We can recall from earlier that $e^{i\Delta\theta}$ can be represented as a `unit complex number` $\cos\Delta\theta+i\sin\Delta\theta$. In essence, in the complex plane, we can rotate a vector by writing it as a complex number and multiplying it by a unit complex number that is at a counter-clockwise angle to the Real-Axis.
+
+**Rotating a Vector as a Complex Number**
+
+![](./graphics/RotatingVectorComplexNumber.mp4){#id .class width=100%} 
+
+For an `interactive demo`, a `code snippet`, or details of multiplying by a `non-unit complex number`, see <u>*Appendix B*</u>.
+
+\
+
+#### $\mathbb{R}^ 2$ Plane (Euclidean)
+
+Complex numbers isn't the only way to rotate in 2D, however. In a `Cartesian Plane`, instead of using complex numbers to represent vectors, we use `column vectors`. These are $2\times1$ matrices with the top entry being the `x-coordinate` & the bottom entry being the `y-coordinate`. And these aren't just written like matrices; they *are* matrices --- they function exactly like them. Matrix addition, inner product, scalar multiplication, matrix multiplication, all function exactly the same as they would for a matrix.
+
+**Column Vectors, Vector Addition, & Scalar Multiplication**
+
+![](./graphics/R2Space1.png){#id .class width=32.5%} ![](./graphics/R2Space2.png){#id .class width=32.5%} ![](./graphics/R2Space3.png){#id .class width=32.5%}
+
+\
+
+#### 2D Rotation Matrices
+
+To rotate vectors without the use of complex numbers, we must turn to matrix operations. With the help of `linear transformations` (see <u>*Appendix C*</u>), we can multiply a $2\times2$ matrix in front of the column vector to get a rotated column vector.
+
+But which $2\times2$ matrix are we looking for? Since a 2D linear transformation is described by a $2\times2$ matrix with the `first column` being the new $\widehat{\imath}$ `basis vector` & the `second column` being the new $\widehat{\jmath}$ basis vector (see <u>*Appendix C*</u>), we need to first find the coordinates of the new $\widehat{\imath}$ & $\widehat{\jmath}$ in terms of $\theta$. Here, $\widehat{\imath}_0$ & $\widehat{\jmath}_0$ are basis vectors that start at $\begin{bmatrix}1\\0\end{bmatrix}$ & $\begin{bmatrix}0\\1\end{bmatrix}$ respectively (notice how they look like an `identity matrix`) that are then rotated by $\theta$ counter-clockwise to get the new $\widehat{\imath}$ & $\widehat{\jmath}$.
+
+**2D Basis Vectors & 2D Rotary Linear Transformation**
+
+![](./graphics/BasisVectors1.mp4){#id .class width=49.5%}  ![](./graphics/BasisVectors2.mp4){#id .class width=49.5%}
+
+We can use the visual in the video <u>*2D Basis Vectors*</u> to help us find the coordinates of $\widehat{\imath}$ & $\widehat{\jmath}$. Let's do this one-by-one; let's first focus on $\widehat{\imath}$. We know that a `unit vector` that is rotated `counter-clockwise` by angle $\theta$ from the `X-Axis` can be written as $\begin{bmatrix}\cos\theta\\ \sin\theta\end{bmatrix}$ (think `unit-circle`) since the `X-component` is just $\cos\theta$ & the `Y-component` is just $\sin\theta$. Because we know that $\widehat{\imath}$ is a unit vector at a counter-clockwise angle $\theta$ from the X-Axis, therefore $\widehat{\imath}=\begin{bmatrix}\cos\theta\\ \sin\theta\end{bmatrix}$. Similarly, $\widehat{\jmath}$ is just rotated $\frac{\pi}{2}\text{rad}$ counter-clockwise from $\widehat{\imath}$, so $\widehat{\jmath}=\begin{bmatrix}\cos(\theta+\frac{\pi}{2})\\ \sin(\theta+\frac{\pi}{2})\end{bmatrix}$. Using `co-function identities`, we can simplify the expression to $\widehat{\jmath}=\begin{bmatrix}-\sin\theta\\ \cos\theta\end{bmatrix}$. Now that we know both $\widehat{\imath}$ & $\widehat{\jmath}$, we can write them as a `transformation matrix` --- in the form of $\begin{bmatrix} \widehat{\imath}_x & \widehat{\jmath}_x \\ \widehat{\imath}_y & \widehat{\jmath}_y \end{bmatrix}$. Doing so, we get the following transformation matrix called the `2D rotation matrix`:
+
+$$M_R=\begin{bmatrix} \cos\theta & -\sin\theta \\ \sin\theta & \cos\theta \end{bmatrix}$$
+
+**Finding $\widehat{\imath}$ & Finding $\widehat{\jmath}$**
+
+![](./graphics/TwoDRMiHat.png){#id .class width=49.5%}  ![](./graphics/TwoDRMjHat.png){#id .class width=49.5%}
+
+To put this to the test, we can apply the `2D rotation matrix` to different vectors using the formula $v\,'=R_{\theta}v_0$:
+
+$$\begin{bmatrix} v_x^{\,\prime} \\ v_y^{\,\prime} \end{bmatrix} = \begin{bmatrix} \cos\theta & -\sin\theta \\ \sin\theta & \cos\theta \end{bmatrix}\begin{bmatrix} v_{0x} \\ v_{0y} \end{bmatrix}$$
+
+This is like finding the coordinates of the vector when plotted in a coordinate system that has been rotated by $\theta$.
+
+**Rotating Vectors in 2D Examples**
+
+![](./graphics/TwoDExample1.mp4){#id .class width=32.5%} ![](./graphics/TwoDExample2.mp4){#id .class width=32.5%} ![](./graphics/TwoDExample3.mp4){#id .class width=32.5%}
+
+Sample of the code can be found in <u>*Appendix D*</u>.
+
+\
+
+## 3D Space
+
+Now that we've mastered rotations in `2D Spaces`, we can finally move on to `3D Space`. In 3D, rotations become a lot more complex; there's an infinite amount of axes a vector can rotate around.
+
+#### Axis-Angle
+
+When it comes to rotations in `3D`, instead of just an `angle`, we also have to specify an `axis of rotation`. The axis of rotation is `normal` (perpendicular) to the plane that the rotation is constrained to, called the `plane of rotation` (this will be important to keep in mind as we move to 4D). The rotation axis is also called the `Euler-Axis`, and is thus conventionally denoted as $\vec{e}$. The angle is still denoted by $\theta$, with positive values corresponding to counter-clockwise rotation along the plane of rotation (assuming $\vec{e}$ is pointing towards your perspective). Note that the direction of rotation is dependent on the handedness of the system; we are assuming a right-handed coordinate system, but for left-handed systems, a positive $\theta$ corresponds to a clockwise rotation (see <u>*Appendix E*</u> for the difference between right-handed & left-handed systems). In most cases, the rotation axis will actually be `normalized` ($\|\vec{e}\|=1$) for convenience, therefore denoted as $\widehat{e}$. To make the axis-angle representation even more compact, the entire rotation --- both the axis & angle --- can be stored as one single vector $\vec{r}$ called the rotation vector (or `Euler-Vector`):
+
+$$\vec{r}=\theta\,\widehat{e}$$
+
+so that $\vec{r}$ has a magnitude of $\theta$ (expressed in radians) and a direction vector of $\widehat{e}$.
+
+**Plane of Rotation in 3D**
+
+![](./graphics/PlaneOfRotation.mp4){#id .class width=100%}
+
+Now that we've formalized what it means to rotate in 3D, we can move on to how to `calculate` the effect of a 3D rotation.
+
+#### Rodrigues’ rotation formula
+
+One way to do calculated the rotated vector $\vec{v}\,'$ is to write it as components. The component `parallel` to $\vec{e}$ won't be affected, and the component `perpendicular` to $\vec{e}$ will be rotated by $\theta$. Using a bit of geometry, we can derive this formula:
+
+$$\vec{v}\,' = \vec{v}_0 \cos \theta +(\widehat{e} \times \vec{v}_0 ) \sin \theta + \widehat{e} ~ (\widehat{e} \cdot \vec{v}_0 )(1-\cos \theta )$$
+
+where $\vec{v}_0$ is the initial vector before the rotation. The first two terms are correlated to the rotated component, whilst the third term is scaling the parallel term down. The full derivation can be seen in <u>*Appendix F*</u>.
+
+So is this it? Have we solved 3D rotations?
+
+Unfortunately, no.
+
+The major flaw with the Axis-Angle representation is that it is impossible to find the Axis-Angle representation of a `combination` of two separate rotations using only Axis-Angle. It's not uncommon to think that you can do so simply through vector addition, adding $\vec{r}_1$ & $\vec{r}_2$ --- the two different Euler-Vectors --- together. Disappointingly, however, that does not in fact yield any information about the combined effect of the two rotations; Euler-Vectors do not obey vector addition. That's the major flaw with the Axis-Angle representation: it is difficult to combine rotations.
+
+On a side note, the Rodrigues' Rotation Formula is also difficult to understand, thus difficult to use and convoluted at first.
+
+\
+
+#### Euler-Angles
+
+Another way to represent rotation, instead of `Axis-Angle`, is to use `Euler-Angles`.
+
+#### 3D Rotation Matrices
+
+## Quaternions
+
+#### 4D Complex Numbers
+
+- $1+i+j+k$
+
+- $i^2=-1$
+
+- $i^2=j^2=k^2=-1$
+
+- $\begin{cases}ij=-ji=k\\jk=-kj=i\\ki=-ik=j\end{cases}$
+
+- $ijk=-1$
+
+- Axiom: $\vec{q}^2=\|\vec{q}\|^2$
+
+- $\mathbb{R}^3$ is not `closed` under multiplication; let $\mathbb{R}^4$ be `closed` under multiplication
+
+```{r quaternion proof}
+# Define a complex number
+z <- 1 + 1i
+
+# Create the plotly plot
+plot_ly() %>%
+  add_trace(
+    x = c(0, Re(z)), y = c(0, Re(z)),
+    mode = "lines+markers",
+    type = "scatter",
+    line = list(width = 3, color = "red"),
+    marker = list(size = 6, color = "red")
+  ) %>%
+  add_trace(
+    x = Re(z), y = Re(z),
+    mode = "text",
+    text = "i+j",  # Label for the vector
+    textposition = "top right"  # Position of the text
+  ) %>%
+  layout(
+    xaxis = list(range = c(0, 1.5), title = "i"),
+    yaxis = list(range = c(0, 1.5), title = "j", tickangle = 0),
+    showlegend = FALSE,
+    width = 200, height = 150
+  ) %>% config(displayModeBar = FALSE)
+```
+
+#### Inverse of Quaternions
+
+#### Euler-Angle to Quaternion
+
+#### Using Quaternions for Rotation
+
+Double Cover
+
+#### Where Quaternions Come From
+## Appendix
+
+#### Appendix A: Taylor Series of $e^{i\theta}$
+
+The full `Taylor Series` expansion for $e^{i\theta}$ is as follows:
+
+$\begin{aligned}
+\qquad e^{i\theta}
+&=\displaystyle\sum^{\infty}_{n=0}\frac{i^n\theta^n}{n!}
+\\~\\
+&=\displaystyle\sum^{\infty}_{n=0}\frac{(-1)^n}{(2n)!}\theta^{2n}
++ i\displaystyle\sum^{\infty}_{n=0}\frac{(-1)^n}{(2n+1)!}\theta^{2n+1}
+\\~\\
+&=\cos\theta+i\sin\theta
+\end{aligned}$
+
+\
+
+$\qquad \therefore re^{i\theta}=r(\cos\theta+i\sin\theta)$
+
+Here, $r\cos\theta$ is the `real component` of the complex number & $ri\sin\theta$ is the `imaginary component`. In other words, $r\cos\theta$ is the `projection` of the complex number onto the Real-Axis & $ri\sin\theta$ is the projection onto the Imaginary-Axis.
+
+\
+
+#### Appendix B: Product of Complex Numbers
+
+Below is the interactive graph for rotating complex numbers. Alternatively, click on this [link](https://www.desmos.com/calculator/3hcrlpbhuq).
+
+<iframe src="https://www.desmos.com/calculator/3hcrlpbhuq?embed" width="500" height="500" style="border: 5px solid #ccc" frameborder=0></iframe>
+
+In the video <u>*Rotating a Vector as a Complex Number*</u> in <u>*2D Space - Complex Plane*</u>, the Python code to calculate the rotated vector $z\,'$ is:
+
+```
+complex(x0, y0) * ( e**(radians(deltaTheta)*1j) )
+```
+
+which is the same as the expression $(x_0+y_0i)(e^{i\Delta\theta})$, where $\Delta\theta$ is in `radians` (in Python, $j$ is used to represent the imaginary number instead of $i$). From this, you can see that there was no trick that was pulled in the video to deceive you; the formula with multiplying by $e$ raised to an `imaginary power` works even in Python in its rawest form ($x_0+y_0i$ is the same as $z_0$).
+
+But what happens if we don't multiply by a `unit complex number`? If we let the `initial` complex number be $z_0=r_0e^{i\theta_0}$ & let the `multiplier` be $z_1=r_1e^{i\theta_1}$, then the resulting product would be:
+
+$$z\,' = z_0z_1 = (r_0e^{i\theta_0})(r_1e^{i\theta_1}) = r_1(r_0e^{i(\theta_0+\theta_1)})$$
+
+In essence, this can still be interpreted as a rotation, but the initial complex number is also `scaled` by the `magnitude` ($r_1$) of the multiplier complex number.
+
+\
+
+#### Appendix C: Linear Transformations
+
+`Linear transformations` lie in the heart of `linear algebra`. The fundamental idea behind linear transformations is to describe --- in the language of our `initial coordinate system` --- what graphing a vector using an `alternate coordinate system` looks like.
+
+This can be hard to imagine at first, so let's look at an example. Let's try to graph $\vec{v}_0$ in an arbitrary coordinate system, where:
+
+$$\vec{v}_0=\begin{bmatrix}3\\2\end{bmatrix}$$
+
+Before we start graphing, let's convert $\vec{v}_0$ into `unit vector notation`:
+
+$$\vec{v}_0=3\widehat{\imath}_0+2\widehat{\jmath}_0$$
+
+Here, we can see that $\vec{v}_0$ is just a `linear combination` of the two `basis vectors`, so we can use simple `scalar multiplication` & `vector addition` to graph $\vec{v}_0$.
+
+**Constructing $\vec{v}_0$ in Initial Coordinate System & Constructing $\vec{v}_0$ in Transformed Coordinate System**
+
+![](./graphics/AppendixC1.mp4){#id .class width=49.5%}  ![](./graphics/AppendixC2.mp4){#id .class width=49.5%}
+
+Now that we've graphed $\vec{v}_0$ in the `transformed coordinate system`, we can record where it landed in our `initial coordinate system`. Let the transformed vector $\vec{v}\,'$ be a function of $\vec{v}_0$, thus $\vec{v}\,'=\vec{f}(\vec{v}_0)$. In our example, when $\vec{v}_0=\begin{bmatrix}3\\2\end{bmatrix}$, we can find $\vec{v}\,'$ by examining our initial coordinate system:
+
+**Finding $\vec{v}\,'$**
+
+![](./graphics/AppendixC3.mp4){#id .class width=100%}
+
+From the video <u>*Finding $\vec{v}\,'$*</u>, we can see that $\vec{v}\,'=\begin{bmatrix} -1 \\ 2.5 \end{bmatrix}$, therefore $\begin{bmatrix} -1 \\ 2.5 \end{bmatrix}=\vec{f}\left(\begin{bmatrix} 3 \\ 2 \end{bmatrix}\right)$. But what is $\vec{f}(\vec{v})$?
+
+The answer actually lies in the `unit vector notation` of vectors. We saw that $\vec{v}\,'=\vec{f}(\vec{v}_0)=-1\widehat{\imath}_0+2.5\widehat{\jmath}_0$, but we also saw that we got the coordinates of $\vec{v}\,'$ through graphing using `vector addition`. And what vectors did we add together? $3\widehat{\imath}+2\widehat{\jmath}$. Thus, we can get the equation $\vec{v}\,'=3\widehat{\imath}+2\widehat{\jmath}$. If we can find $\widehat{\imath}$ & $\widehat{\jmath}$, then we can find the function $\vec{f}(\vec{v})$. In this example, $\widehat{\imath}$ was actually $\begin{bmatrix}1\\0.5\end{bmatrix}$, & $\widehat{\jmath}$ was actually $\begin{bmatrix}-2\\0.5\end{bmatrix}$. Plugging these values into the previous equation, we get $\vec{v}\,'=3\begin{bmatrix}1\\0.5\end{bmatrix}+2\begin{bmatrix}-2\\0.5\end{bmatrix}$, which is equal to $\begin{bmatrix}-1\\2.5\end{bmatrix}$!
+
+From this example, we can see that $\vec{f}(\vec{v})=\vec{v}_x\widehat{\imath}+\vec{v}_xy\widehat{\jmath}$, which we can rewrite as $\vec{f}(\vec{v})=\vec{v}_x\begin{bmatrix}\widehat{\imath}_x\\\widehat{\imath}_y\end{bmatrix}+\vec{v}_y\begin{bmatrix}\widehat{\jmath}_x\\\widehat{\jmath}_y\end{bmatrix}$. We can compact this equation into $\vec{f}(\vec{v})=\begin{bmatrix} \widehat{\imath}_x & \widehat{\jmath}_x \\ \widehat{\imath}_y & \widehat{\jmath}_y \end{bmatrix} \begin{bmatrix}\vec{v}_x\\\vec{v}_x\end{bmatrix}$, or $\vec{f}(\vec{v})=M_T\vec{v}$. Thus, we get the heart of `linear transformations`:
+
+$$\vec{v}\,'=M_T\vec{v}_0 \; \left\{ \; \begin{array}{align} M_{T}=\begin{bmatrix} \widehat{\imath}_x & \widehat{\jmath}_x \\ \widehat{\imath}_y & \widehat{\jmath}_y \end{bmatrix} \\ \vec{v}_0=\begin{bmatrix}\vec{v}_x\\\vec{v}_y\end{bmatrix} \end{array} \right.$$
+
+In essence, a `linear transformation` is like constructing a vector using the `language` of another coordinate system, then `describing the result` in the language of our initial coordinate system. This is parallel to `transforming` our vector from the initial coordinate system to another coordinate system, and can be calculated using matrix multiplication of a `transformation matrix` --- whose columns are the coordinates of the `basis vectors` in the language of the initial coordinate system --- with the vector's coordinates before the transformation.
+
+\
+
+#### Appendix D: 2D Rotation Matrix Code
+
+The Python code to animate the `linear transformations` in the videos <u>*Rotating Vectors in 2D Examples*</u> in <u>*2D Space - 2D Rotation Matrices*</u> is:
+
+```
+theta = #some angle in radians
+rotation_matrix = [[cos(theta), -sin(theta)],
+                   [sin(theta), cos(theta)]]
+vector.animate.apply_matrix(rotation_matrix)
+```
+
+You can see that the `rotation matrix` $\begin{bmatrix} \cos\theta & -\sin\theta \\ \sin\theta & \cos\theta \end{bmatrix}$ we found in <u>*2D Space - 2D Rotation Matrices*</u> was indeed used directly for the animations.
+
+\
+
+#### Appendix E: Coordinate Systen Handedness
+
+The handedness of a `3D rectangular coordinate system` refers to the third-axis's orientation in relation to the other two axes. To determine a system's handedness, stick out your thumb, index, & middle finger in a way that's orthogonal to each other (shape your thumb & index finger into an "L", and then stick your middle finger out from your palm). If the system's X, Y, & Z-Axis can match the orientation of your thumb, index, & middle finger on your right hand, then it is right-handed. If not, then it matches the orientation of your thumb, index, & middle finger on your left hand, thus left-handed.
+
+**Left v.s. Right-handed Systems**
+
+![](./graphics/LHSZ.png){#id .class width=49.5%}  ![](./graphics/RHSZ.png){#id .class width=49.5%}
+
+To determine which direction a `positive rotation` goes, curl the hand that corresponds to the handedness of the system into a thumbs-up. Point the direction of the thumb in the same direction of the rotation axis, and the way your fingers curl is the same direction that a positive rotation will go. In a right-handed system, when the rotation axis is pointing towards you, the positive rotation will be counter-clockwise. In a left-handed system, when the rotation axis is pointing towards you, the positive rotation will be clockwise. You can also think of it as: when rotating around the Z-Axis, the positive rotation will always be in the direction from the X-Axis to the Y-Axis.
+
+**Positive Rotation in Left v.s. Right-handed Systems**
+
+![](./graphics/LHSZ.mp4){#id .class width=49.5%}  ![](./graphics/RHSZ.mp4){#id .class width=49.5%}
+
+In addition to handedness, most 3D applications will have a preferred orientation. Some applications, like <u>`Unity`</u>, prefers to have the Y-Axis as the "up" direction (called Y-up). Others, like <u>`Blender`</u>, prefers to have the Z-Axis as the "up" direction (called Z-up). Mathematically, the orientation does not affect the outcome. However, it does affect our interpretation of the outcome (which way is "up"?).
+
+Orientation, combined with handedness, results in four different possible configurations for rectangular coordinate systems in `3D engines`. There is no agreed upon "standard" configuration, thus converting from one 3D engine to another can be a pain at times. For example, <u>Unity</u> uses left-handed Y-up, whilst <u>Blender</u> uses right-handed Z-up. Since many game developers design characters in <u>Blender</u>, then export to <u>Unity</u>, the conversion can often mess up the orientation of the model.
+
+**Types of Coordinate Systems in Applications**
+
+![](./graphics/FreyaHolmerSystemsChart.jpeg){#id .class width=100%}
+
+\
+
+#### Appendix F: Derivation for Rodrigues' Rotation Formula
+
+The full derivation for the `Rodrigues' Rotation Formula` is as follows:
+
+We first need to decompose the initial vector $\vec{v}_0$ into its `parallel` and `perpendicular components`:
+
+$\qquad \vec{v}_0=\vec{v}_{\parallel}+\vec{v}_{\perp}$
+
+Here, the parallel component $\vec{v}_{\parallel}$ is the `vector projection` of $\vec{v}_0$ onto the `unit rotation-axis` $\widehat{e}$:
+
+$\qquad \vec{v}_{\parallel}=(\vec{v_0}\cdot\widehat{e})\widehat{e}$
+
+On the contrary, the perpendicular component $\vec{v}_{\perp}$ is the `vector rejection` of $\vec{v}_0$ from $\widehat{e}$:
+
+$\qquad \vec{v}_{\perp} = \vec{v}_0 - \vec{v}_{\parallel} = \vec{v}_0 - (\vec{v_0}\cdot\widehat{e})\widehat{e}$
+
+Using the `vector triple product` formula, we can rewrite $\vec{v}_{\perp}$ as:
+
+$\qquad \vec{v}_{\perp} = -\widehat{e}\times(\widehat{e}\times\vec{v}_0)$
+
+**Vector Projection $\vec{v}_{\parallel}$ & Vector Rejection $\vec{v}_{\perp}$**
+
+![](./graphics/vParallel.png){#id .class width=49.5%} ![](./graphics/vPerp.png){#id .class width=49.5%}
+
+$\vec{v}_{\parallel}$ won't be affected by the rotation, but $\vec{v}_{\perp}$ will. Therefore, $\vec{v}_{\parallel}^{\,\prime} = \vec{v}_{\parallel}$.
+
+In contrast, $\vec{v}_{\perp}$ will be affected by the rotation, so we first need to define the `plane of rotation`. The plane can be defined by two vectors: $\vec{v}_{\perp}$ & $\widehat{e}\times\vec{v}_0$. These two vectors are parallel to the plane, but perpendicular to each other.
+
+**Defining the Plane of Rotation**
+
+![](./graphics/vPlane.png){#id .class width=100%}
+
+Thus, using `Euler's Formula`, we can find that $\vec{v}_{\perp}^{\,\prime} = \vec{v}_{\perp} \cos\theta + (\widehat{e}\times\vec{v}_0)\sin\theta$.
+
+Now adding together $\vec{v}_{\parallel}^{\,\prime}$ & $\vec{v}_{\perp}^{\,\prime}$:
+
+$\begin{aligned} \qquad \vec{v}^{\,\prime} &= \vec{v}_{\parallel}^{\,\prime} + \vec{v}_{\perp}^{\,\prime} \\ &=\vec{v}_{\parallel} + \vec{v}_{\perp} \cos\theta + (\widehat{e}\times\vec{v}_0)\sin\theta \\ &= \vec{v}_0 \cos \theta +(\widehat{e} \times \vec{v}_0 ) \sin \theta + \widehat{e} ~ (\widehat{e} \cdot \vec{v}_0 )(1-\cos \theta ) \end{aligned}$
+
+Which is the original `Rodrigues Rotation Formula`.
+
+#### Appendix G: 
